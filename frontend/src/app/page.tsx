@@ -10,11 +10,21 @@ type Project = {
   status: string;
 };
 
+type Deployment = {
+  id: number;
+  projectId: number;
+  commitHash: string;
+  status: string;
+  createdAt: string;
+};
+
 export default function Home() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [name, setName] = useState("");
   const [repositoryUrl, setRepositoryUrl] = useState("");
   const [error, setError] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
 
   const fetchProjects = async () => {
     const response = await fetch("http://localhost:8080/api/projects");
@@ -26,6 +36,25 @@ export default function Home() {
     const data = await response.json();
     setProjects(data);
   };
+
+  const fetchDeployments = async (projectId: number) => {
+    setSelectedProjectId(projectId);
+
+    const response = await fetch(
+      `http://localhost:8080/api/deployments/project/${projectId}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch deployments");
+    }
+
+    const data = await response.json();
+    setDeployments(data);
+  };
+
+  const selectedProject = projects.find(
+    (project) => project.id === selectedProjectId
+  );
 
   useEffect(() => {
     fetchProjects();
@@ -97,9 +126,33 @@ export default function Home() {
               Created:{" "}
               {new Date(project.createdAt).toLocaleString()}
             </p>
+            <button onClick={() => fetchDeployments(project.id)}>
+              View Deployments
+            </button>
           </div>
         ))}
       </section>
+      
+      {selectedProjectId !== null && (
+        <section>
+          <h2>Deployments {selectedProject && ` — ${selectedProject.name}`}</h2>
+          
+          {deployments.length === 0 ? (
+            <p>No deployments yet.</p>
+          ) : (
+            deployments.map((deployment) => (
+              <div key={deployment.id}>
+                <p>Commit: {deployment.commitHash}</p>
+                <p>Status: {deployment.status}</p>
+                <p>
+                  Created:{" "}
+                  {new Date(deployment.createdAt).toLocaleString()}
+                </p>
+              </div>
+            ))
+          )}
+        </section>
+      )}
     </main>
   );
 }
