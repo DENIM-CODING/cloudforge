@@ -8,8 +8,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cloudforge.backend.dto.ProjectRequest;
 import com.cloudforge.backend.entity.Project;
 import com.cloudforge.backend.service.ProjectService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -22,8 +25,8 @@ public class ProjectController {
     }
 
     @PostMapping
-    public Project createProject(@RequestBody Project project) {
-        return projectService.createProject(project);
+    public Project createProject(@Valid @RequestBody ProjectRequest request){
+        return projectService.createProject(request);
     }
 
     @GetMapping
