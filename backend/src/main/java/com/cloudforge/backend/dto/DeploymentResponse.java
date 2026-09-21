@@ -2,12 +2,14 @@ package com.cloudforge.backend.dto;
 
 import java.time.LocalDateTime;
 
+import com.cloudforge.backend.entity.DeploymentStatus;
+
 public class DeploymentResponse {
 
     private Long id;
     private Long projectId;
     private String commitHash;
-    private String status;
+    private DeploymentStatus status;
     private LocalDateTime createdAt;
 
     public DeploymentResponse() {
@@ -17,7 +19,7 @@ public class DeploymentResponse {
             Long id,
             Long projectId,
             String commitHash,
-            String status,
+            DeploymentStatus status,
             LocalDateTime createdAt) {
 
         this.id = id;
@@ -39,7 +41,7 @@ public class DeploymentResponse {
         return commitHash;
     }
 
-    public String getStatus() {
+    public DeploymentStatus getStatus() {
         return status;
     }
 

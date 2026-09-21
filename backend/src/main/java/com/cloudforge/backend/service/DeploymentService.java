@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.cloudforge.backend.dto.DeploymentRequest;
 import com.cloudforge.backend.dto.DeploymentResponse;
 import com.cloudforge.backend.entity.Deployment;
+import com.cloudforge.backend.entity.DeploymentStatus;
 import com.cloudforge.backend.entity.Project;
 import com.cloudforge.backend.exception.ProjectNotFoundException;
 import com.cloudforge.backend.repository.DeploymentRepository;
@@ -17,31 +18,62 @@ public class DeploymentService {
 
     private final DeploymentRepository deploymentRepository;
     private final ProjectRepository projectRepository;
+    private final DeploymentEngine deploymentEngine;
 
-    public DeploymentService(
-            DeploymentRepository deploymentRepository,
-            ProjectRepository projectRepository) {
-
+    public DeploymentService( DeploymentRepository deploymentRepository, ProjectRepository projectRepository, DeploymentEngine deploymentEngine) {
         this.deploymentRepository = deploymentRepository;
         this.projectRepository = projectRepository;
+        this.deploymentEngine = deploymentEngine;
     }
 
     public DeploymentResponse createDeployment(DeploymentRequest request) {
 
         Project project = projectRepository.findById(request.getProjectId())
-                .orElseThrow(() ->
-                        new ProjectNotFoundException(request.getProjectId())
-                );
+                .orElseThrow(() -> new ProjectNotFoundException(request.getProjectId()));
 
         Deployment deployment = new Deployment();
 
         deployment.setCommitHash(request.getCommitHash());
         deployment.setProject(project);
 
-        Deployment savedDeployment = deploymentRepository.save(deployment);
+        // First save → status becomes PENDING
+        deployment = deploymentRepository.save(deployment);
 
-        return toResponse(savedDeployment);
-    }
+        try {
+
+                // Deployment has officially started
+                deployment.setStatus(DeploymentStatus.BUILDING);
+                deploymentRepository.save(deployment);
+
+                String imageName =
+                        "cloudforge-project-" +
+                        project.getId() +
+                        "-deployment-" +
+                        deployment.getId();
+
+                deploymentEngine.deploy(
+                        project.getRepositoryUrl(),
+                        request.getCommitHash(),
+                        imageName
+                );
+
+                // Docker build succeeded
+                deployment.setStatus(DeploymentStatus.SUCCESS);
+
+        } catch (Exception exception) {
+
+                // Something failed during deployment
+                deployment.setStatus(DeploymentStatus.FAILED);
+
+                System.out.println(
+                        "[Deployment] Failed: " + exception.getMessage()
+                );
+        }
+
+        deploymentRepository.save(deployment);
+
+        return toResponse(deployment);
+        }
 
     public List<DeploymentResponse> getAllDeployments() {
 

@@ -3,6 +3,8 @@ package com.cloudforge.backend.entity;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -18,7 +20,8 @@ public class Deployment {
 
     private String commitHash;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private DeploymentStatus status;
 
     private LocalDateTime createdAt;
 
@@ -31,7 +34,7 @@ public class Deployment {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        status = "PENDING";
+        status = DeploymentStatus.PENDING;
     }
 
     public Long getId() {
@@ -46,7 +49,7 @@ public class Deployment {
         this.commitHash = commitHash;
     }
 
-    public String getStatus() {
+    public DeploymentStatus getStatus() {
         return status;
     }
 
@@ -61,4 +64,8 @@ public class Deployment {
     public void setProject(Project project) {
         this.project = project;
     }
+
+    public void setStatus(DeploymentStatus status) {
+    this.status = status;
+}
 }
