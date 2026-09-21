@@ -6,6 +6,8 @@ type Project = {
   id: number;
   name: string;
   repositoryUrl: string;
+  createdAt: string;
+  status: string;
 };
 
 export default function Home() {
@@ -86,7 +88,15 @@ export default function Home() {
         {projects.map((project) => (
           <div key={project.id}>
             <h3>{project.name}</h3>
+
             <p>{project.repositoryUrl}</p>
+
+            <p>Status: {project.status}</p>
+
+            <p>
+              Created:{" "}
+              {new Date(project.createdAt).toLocaleString()}
+            </p>
           </div>
         ))}
       </section>

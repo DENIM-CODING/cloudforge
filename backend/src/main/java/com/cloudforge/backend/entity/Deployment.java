@@ -6,58 +6,59 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 
 @Entity
-public class Project {
+public class Deployment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
-
-    private String repositoryUrl;
-
-    private LocalDateTime createdAt;
+    private String commitHash;
 
     private String status;
 
-    public Project() {
+    private LocalDateTime createdAt;
+
+    @ManyToOne
+    private Project project;
+
+    public Deployment() {
     }
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        status = "READY";
+        status = "PENDING";
     }
 
     public Long getId() {
         return id;
     }
 
-    public String getName() {
-        return name;
+    public String getCommitHash() {
+        return commitHash;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setCommitHash(String commitHash) {
+        this.commitHash = commitHash;
     }
 
-    public String getRepositoryUrl() {
-        return repositoryUrl;
-    }
-
-    public void setRepositoryUrl(String repositoryUrl) {
-        this.repositoryUrl = repositoryUrl;
+    public String getStatus() {
+        return status;
     }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public String getStatus() {
-        return status;
+    public Project getProject() {
+        return project;
     }
-    
+
+    public void setProject(Project project) {
+        this.project = project;
+    }
 }
