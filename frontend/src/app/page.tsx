@@ -25,6 +25,9 @@ export default function Home() {
   const [repositoryUrl, setRepositoryUrl] = useState("");
   const [error, setError] = useState("");
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [commitHashes, setCommitHashes] = useState<Record<number, string>>({});
+  const [deploymentError, setDeploymentError] = useState("");
+  const [deployingProjectId, setDeployingProjectId] = useState<number | null>(null);
 
   const fetchProjects = async () => {
     const response = await fetch("http://localhost:8080/api/projects");
@@ -87,6 +90,40 @@ export default function Home() {
     await fetchProjects();
   };
 
+  const handleDeploy = async (projectId: number) => {
+    setDeploymentError("");
+    setDeployingProjectId(projectId);
+
+    const commitHash = commitHashes[projectId];
+
+    const response = await fetch("http://localhost:8080/api/deployments", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        projectId,
+        commitHash,
+      }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      setDeploymentError(data.message || "Failed to create deployment");
+      setDeployingProjectId(null);
+      return;
+    }
+
+    setCommitHashes((current) => ({
+      ...current,
+      [projectId]: "",
+    }));
+
+    setDeployingProjectId(null);
+
+    await fetchDeployments(projectId);
+  };
+
   return (
     <main>
       <h1>CloudForge</h1>
@@ -126,9 +163,34 @@ export default function Home() {
               Created:{" "}
               {new Date(project.createdAt).toLocaleString()}
             </p>
+
             <button onClick={() => fetchDeployments(project.id)}>
               View Deployments
             </button>
+
+            <div>
+              <input
+                type="text"
+                placeholder="Commit hash"
+                value={commitHashes[project.id] || ""}
+                onChange={(event) =>
+                  setCommitHashes((current) => ({
+                    ...current,
+                    [project.id]: event.target.value,
+                  }))
+                }
+              />
+
+              <button
+                onClick={() => handleDeploy(project.id)}
+                disabled={
+                  deployingProjectId === project.id ||
+                  !(commitHashes[project.id] || "").trim()
+                }
+              >
+                {deployingProjectId === project.id ? "Deploying..." : "Deploy"}
+              </button>
+            </div>
           </div>
         ))}
       </section>
@@ -153,6 +215,7 @@ export default function Home() {
           )}
         </section>
       )}
+      {deploymentError && <p>{deploymentError}</p>}
     </main>
   );
 }
