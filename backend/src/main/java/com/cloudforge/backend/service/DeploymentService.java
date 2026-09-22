@@ -51,13 +51,13 @@ public class DeploymentService {
                         "-deployment-" +
                         deployment.getId();
 
-                deploymentEngine.deploy(
+                int hostPort = deploymentEngine.deploy(
                         project.getRepositoryUrl(),
                         request.getCommitHash(),
                         imageName
                 );
 
-                // Docker build succeeded
+                deployment.setHostPort(hostPort);
                 deployment.setStatus(DeploymentStatus.SUCCESS);
 
         } catch (Exception exception) {
@@ -90,6 +90,7 @@ public class DeploymentService {
                 deployment.getProject().getId(),
                 deployment.getCommitHash(),
                 deployment.getStatus(),
+                deployment.getHostPort(),
                 deployment.getCreatedAt()
         );
     }

@@ -11,6 +11,7 @@ public class DeploymentResponse {
     private String commitHash;
     private DeploymentStatus status;
     private LocalDateTime createdAt;
+    private Integer hostPort;
 
     public DeploymentResponse() {
     }
@@ -20,6 +21,7 @@ public class DeploymentResponse {
             Long projectId,
             String commitHash,
             DeploymentStatus status,
+            Integer hostPort,
             LocalDateTime createdAt) {
 
         this.id = id;
@@ -27,6 +29,7 @@ public class DeploymentResponse {
         this.commitHash = commitHash;
         this.status = status;
         this.createdAt = createdAt;
+        this.hostPort = hostPort;
     }
 
     public Long getId() {
@@ -47,5 +50,8 @@ public class DeploymentResponse {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+    public Integer getHostPort() {
+        return hostPort;
     }
 }

@@ -28,6 +28,8 @@ public class Deployment {
     @ManyToOne
     private Project project;
 
+    private Integer hostPort;
+
     public Deployment() {
     }
 
@@ -66,6 +68,14 @@ public class Deployment {
     }
 
     public void setStatus(DeploymentStatus status) {
-    this.status = status;
-}
+        this.status = status;
+    }
+
+    public Integer getHostPort() {
+        return hostPort;
+    }
+
+    public void setHostPort(Integer hostPort) {
+        this.hostPort = hostPort;
+    }
 }

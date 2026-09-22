@@ -12,16 +12,20 @@ public class DeploymentEngine {
 
     private final GitService gitService;
     private final DockerService dockerService;
-
+    private final ContainerService containerService;
+    
     public DeploymentEngine(
             GitService gitService,
-            DockerService dockerService) {
+            DockerService dockerService,
+            ContainerService containerService) {
 
         this.gitService = gitService;
         this.dockerService = dockerService;
+        this.containerService = containerService;
     }
+    
 
-    public void deploy(
+    public int deploy(
             String repositoryUrl,
             String commitHash,
             String imageName) throws Exception {
@@ -40,6 +44,18 @@ public class DeploymentEngine {
                     directory.toString(),
                     imageName
             );
+
+            // 4. Run the container and get the port Docker assigned
+            int hostPort = containerService.runContainer(
+                    imageName,
+                    "cloudforge-deployment-" +
+                            imageName.substring(imageName.lastIndexOf("-") + 1),
+                    3000
+            );
+
+            System.out.println("[Deployment] Application running on port: " + hostPort);
+
+            return hostPort;
 
         } finally {
 
