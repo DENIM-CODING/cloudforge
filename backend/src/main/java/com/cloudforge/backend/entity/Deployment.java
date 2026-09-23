@@ -30,6 +30,9 @@ public class Deployment {
 
     private Integer hostPort;
 
+    private String imageName;
+    private String containerName;
+
     public Deployment() {
     }
 
@@ -77,5 +80,21 @@ public class Deployment {
 
     public void setHostPort(Integer hostPort) {
         this.hostPort = hostPort;
+    }
+
+    public String getImageName() {
+        return imageName;
+    }
+
+    public void setImageName(String imageName) {
+        this.imageName = imageName;
+    }
+
+    public String getContainerName() {
+        return containerName;
+    }
+
+    public void setContainerName(String containerName) {
+        this.containerName = containerName;
     }
 }

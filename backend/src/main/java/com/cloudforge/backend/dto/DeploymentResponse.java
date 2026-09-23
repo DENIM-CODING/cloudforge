@@ -10,8 +10,10 @@ public class DeploymentResponse {
     private Long projectId;
     private String commitHash;
     private DeploymentStatus status;
-    private LocalDateTime createdAt;
     private Integer hostPort;
+    private String imageName;
+    private String containerName;
+    private LocalDateTime createdAt;
 
     public DeploymentResponse() {
     }
@@ -22,14 +24,18 @@ public class DeploymentResponse {
             String commitHash,
             DeploymentStatus status,
             Integer hostPort,
+            String imageName,
+            String containerName,
             LocalDateTime createdAt) {
 
         this.id = id;
         this.projectId = projectId;
         this.commitHash = commitHash;
         this.status = status;
-        this.createdAt = createdAt;
         this.hostPort = hostPort;
+        this.imageName = imageName;
+        this.containerName = containerName;
+        this.createdAt = createdAt;
     }
 
     public Long getId() {
@@ -53,5 +59,13 @@ public class DeploymentResponse {
     }
     public Integer getHostPort() {
         return hostPort;
+    }
+
+    public String getImageName() {
+        return imageName;
+    }
+
+    public String getContainerName() {
+        return containerName;
     }
 }

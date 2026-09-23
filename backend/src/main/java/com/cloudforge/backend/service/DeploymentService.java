@@ -51,13 +51,20 @@ public class DeploymentService {
                         "-deployment-" +
                         deployment.getId();
 
+                String containerName =
+                        "cloudforge-deployment-" +
+                        deployment.getId();
+
                 int hostPort = deploymentEngine.deploy(
                         project.getRepositoryUrl(),
                         request.getCommitHash(),
-                        imageName
+                        imageName,
+                        containerName
                 );
 
                 deployment.setHostPort(hostPort);
+                deployment.setImageName(imageName);
+                deployment.setContainerName(containerName);
                 deployment.setStatus(DeploymentStatus.SUCCESS);
 
         } catch (Exception exception) {
@@ -91,9 +98,11 @@ public class DeploymentService {
                 deployment.getCommitHash(),
                 deployment.getStatus(),
                 deployment.getHostPort(),
+                deployment.getImageName(),
+                deployment.getContainerName(),
                 deployment.getCreatedAt()
-        );
-    }
+                );
+        }
 
     public List<DeploymentResponse> getDeploymentsByProject(Long projectId) {
 

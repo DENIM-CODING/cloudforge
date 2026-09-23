@@ -28,7 +28,8 @@ public class DeploymentEngine {
     public int deploy(
             String repositoryUrl,
             String commitHash,
-            String imageName) throws Exception {
+            String imageName,
+            String containerName) throws Exception {
 
         Path directory = null;
 
@@ -48,8 +49,7 @@ public class DeploymentEngine {
             // 4. Run the container and get the port Docker assigned
             int hostPort = containerService.runContainer(
                     imageName,
-                    "cloudforge-deployment-" +
-                            imageName.substring(imageName.lastIndexOf("-") + 1),
+                    containerName,
                     3000
             );
 
