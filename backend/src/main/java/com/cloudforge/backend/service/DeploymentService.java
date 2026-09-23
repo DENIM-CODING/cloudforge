@@ -18,75 +18,37 @@ public class DeploymentService {
 
     private final DeploymentRepository deploymentRepository;
     private final ProjectRepository projectRepository;
-    private final DeploymentEngine deploymentEngine;
+    private final DeploymentWorker deploymentWorker;
     private final ContainerService containerService;
 
-   public DeploymentService(
-        DeploymentRepository deploymentRepository,
-        ProjectRepository projectRepository,
-        DeploymentEngine deploymentEngine,
-        ContainerService containerService) {
-                
+        public DeploymentService(
+                DeploymentRepository deploymentRepository,
+                ProjectRepository projectRepository,
+                DeploymentWorker deploymentWorker,
+                ContainerService containerService) {
+
         this.deploymentRepository = deploymentRepository;
         this.projectRepository = projectRepository;
-        this.deploymentEngine = deploymentEngine;
+        this.deploymentWorker = deploymentWorker;
         this.containerService = containerService;
-    }
-
-    public DeploymentResponse createDeployment(DeploymentRequest request) {
-
-        Project project = projectRepository.findById(request.getProjectId())
-                .orElseThrow(() -> new ProjectNotFoundException(request.getProjectId()));
-
-        Deployment deployment = new Deployment();
-
-        deployment.setCommitHash(request.getCommitHash());
-        deployment.setProject(project);
-
-        // First save → status becomes PENDING
-        deployment = deploymentRepository.save(deployment);
-
-        try {
-
-                // Deployment has officially started
-                deployment.setStatus(DeploymentStatus.BUILDING);
-                deploymentRepository.save(deployment);
-
-                String imageName =
-                        "cloudforge-project-" +
-                        project.getId() +
-                        "-deployment-" +
-                        deployment.getId();
-
-                String containerName =
-                        "cloudforge-deployment-" +
-                        deployment.getId();
-
-                int hostPort = deploymentEngine.deploy(
-                        project.getRepositoryUrl(),
-                        request.getCommitHash(),
-                        imageName,
-                        containerName
-                );
-
-                deployment.setHostPort(hostPort);
-                deployment.setImageName(imageName);
-                deployment.setContainerName(containerName);
-                deployment.setStatus(DeploymentStatus.SUCCESS);
-
-        } catch (Exception exception) {
-
-                // Something failed during deployment
-                deployment.setStatus(DeploymentStatus.FAILED);
-
-                System.out.println(
-                        "[Deployment] Failed: " + exception.getMessage()
-                );
         }
 
-        deploymentRepository.save(deployment);
+        public DeploymentResponse createDeployment(DeploymentRequest request) {
 
-        return toResponse(deployment);
+                Project project = projectRepository.findById(request.getProjectId())
+                        .orElseThrow(() ->
+                                new ProjectNotFoundException(request.getProjectId()));
+
+                Deployment deployment = new Deployment();
+
+                deployment.setCommitHash(request.getCommitHash());
+                deployment.setProject(project);
+
+                deployment = deploymentRepository.save(deployment);
+
+                deploymentWorker.deploy(deployment);
+
+                return toResponse(deployment);
         }
 
     public List<DeploymentResponse> getAllDeployments() {
