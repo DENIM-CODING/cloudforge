@@ -1,10 +1,11 @@
 package com.cloudforge.backend.service;
 
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+
 import com.cloudforge.backend.entity.Deployment;
 import com.cloudforge.backend.entity.DeploymentStatus;
 import com.cloudforge.backend.repository.DeploymentRepository;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
 
 @Service
 public class DeploymentWorker {
@@ -21,7 +22,13 @@ public class DeploymentWorker {
     }
 
     @Async
-    public void deploy(Deployment deployment) {
+    public void deploy(Long deploymentId) {
+
+        Deployment deployment = deploymentRepository.findById(deploymentId)
+        .orElseThrow(() ->
+                new RuntimeException(
+                        "Deployment with id " + deploymentId + " not found"
+                ));
 
         try {
             deployment.setStatus(DeploymentStatus.BUILDING);

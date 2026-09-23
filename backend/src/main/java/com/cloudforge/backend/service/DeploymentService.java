@@ -46,7 +46,7 @@ public class DeploymentService {
 
                 deployment = deploymentRepository.save(deployment);
 
-                deploymentWorker.deploy(deployment);
+                deploymentWorker.deploy(deployment.getId());
 
                 return toResponse(deployment);
         }
