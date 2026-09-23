@@ -15,71 +15,103 @@ public class ContainerService {
         int containerPort)
         throws IOException, InterruptedException {
 
-    ProcessBuilder runProcess = new ProcessBuilder(
-            "docker",
-            "run",
-            "-d",
-            "--name",
-            containerName,
-            "-p",
-            "0:" + containerPort,
-            imageName
-    );
-
-    runProcess.redirectErrorStream(true);
-
-    Process process = runProcess.start();
-
-    String containerId;
-
-    try (BufferedReader reader = new BufferedReader(
-            new InputStreamReader(process.getInputStream()))) {
-
-        containerId = reader.readLine();
-    }
-
-    int exitCode = process.waitFor();
-
-    if (exitCode != 0) {
-        throw new RuntimeException(
-                "Docker container failed to start with exit code " + exitCode
+        ProcessBuilder runProcess = new ProcessBuilder(
+                "docker",
+                "run",
+                "-d",
+                "--name",
+                containerName,
+                "-p",
+                "0:" + containerPort,
+                imageName
         );
-    }
 
-    ProcessBuilder portProcess = new ProcessBuilder(
-            "docker",
-            "port",
-            containerName,
-            containerPort + "/tcp"
-    );
+        runProcess.redirectErrorStream(true);
 
-    portProcess.redirectErrorStream(true);
+        Process process = runProcess.start();
 
-    Process portCommand = portProcess.start();
+        String containerId;
 
-    String portOutput;
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(process.getInputStream()))) {
 
-    try (BufferedReader reader = new BufferedReader(
-            new InputStreamReader(portCommand.getInputStream()))) {
+            containerId = reader.readLine();
+        }
 
-        portOutput = reader.readLine();
-    }
+        int exitCode = process.waitFor();
 
-    int portExitCode = portCommand.waitFor();
+        if (exitCode != 0) {
+            throw new RuntimeException(
+                    "Docker container failed to start with exit code " + exitCode
+            );
+        }
 
-    if (portExitCode != 0 || portOutput == null) {
-        throw new RuntimeException(
-                "Failed to determine assigned host port"
+        ProcessBuilder portProcess = new ProcessBuilder(
+                "docker",
+                "port",
+                containerName,
+                containerPort + "/tcp"
         );
+
+        portProcess.redirectErrorStream(true);
+
+        Process portCommand = portProcess.start();
+
+        String portOutput;
+
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(portCommand.getInputStream()))) {
+
+            portOutput = reader.readLine();
+        }
+
+        int portExitCode = portCommand.waitFor();
+
+        if (portExitCode != 0 || portOutput == null) {
+            throw new RuntimeException(
+                    "Failed to determine assigned host port"
+            );
+        }
+
+        System.out.println("[Docker Run] Container ID: " + containerId);
+        System.out.println("[Docker Run] Port mapping: " + portOutput);
+
+        String hostPort = portOutput.substring(
+                portOutput.lastIndexOf(":") + 1
+        );
+
+        return Integer.parseInt(hostPort);
     }
 
-    System.out.println("[Docker Run] Container ID: " + containerId);
-    System.out.println("[Docker Run] Port mapping: " + portOutput);
+    public void stopContainer(String containerName)
+        throws IOException, InterruptedException {
 
-    String hostPort = portOutput.substring(
-            portOutput.lastIndexOf(":") + 1
-    );
+        ProcessBuilder processBuilder = new ProcessBuilder(
+                "docker",
+                "stop",
+                containerName
+        );
 
-    return Integer.parseInt(hostPort);
-}
+        processBuilder.redirectErrorStream(true);
+
+        Process process = processBuilder.start();
+
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(process.getInputStream()))) {
+
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                System.out.println("[Docker Stop] " + line);
+            }
+        }
+
+        int exitCode = process.waitFor();
+
+        if (exitCode != 0) {
+            throw new RuntimeException(
+                    "Docker stop failed with exit code " + exitCode
+            );
+        }
+    }
 }

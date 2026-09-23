@@ -45,4 +45,11 @@ public class DeploymentController {
 
         return deploymentService.getDeploymentsByProject(projectId);
     }
+
+    @PostMapping("/{deploymentId}/stop")
+    public DeploymentResponse stopDeployment(
+            @PathVariable Long deploymentId) {
+
+        return deploymentService.stopDeployment(deploymentId);
+    }
 }

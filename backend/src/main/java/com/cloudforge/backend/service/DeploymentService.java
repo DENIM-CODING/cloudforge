@@ -19,11 +19,18 @@ public class DeploymentService {
     private final DeploymentRepository deploymentRepository;
     private final ProjectRepository projectRepository;
     private final DeploymentEngine deploymentEngine;
+    private final ContainerService containerService;
 
-    public DeploymentService( DeploymentRepository deploymentRepository, ProjectRepository projectRepository, DeploymentEngine deploymentEngine) {
+   public DeploymentService(
+        DeploymentRepository deploymentRepository,
+        ProjectRepository projectRepository,
+        DeploymentEngine deploymentEngine,
+        ContainerService containerService) {
+                
         this.deploymentRepository = deploymentRepository;
         this.projectRepository = projectRepository;
         this.deploymentEngine = deploymentEngine;
+        this.containerService = containerService;
     }
 
     public DeploymentResponse createDeployment(DeploymentRequest request) {
@@ -116,4 +123,45 @@ public class DeploymentService {
                 .map(this::toResponse)
                 .toList();
     }
+
+    public DeploymentResponse stopDeployment(Long deploymentId) {
+
+        Deployment deployment = deploymentRepository.findById(deploymentId)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Deployment with id " + deploymentId + " not found"
+                        )
+                );
+
+        if (deployment.getStatus() != DeploymentStatus.SUCCESS) {
+                throw new RuntimeException(
+                        "Only successful deployments can be stopped"
+                );
+        }
+
+        try {
+
+                containerService.stopContainer(
+                        deployment.getContainerName()
+                );
+
+                deployment.setStatus(DeploymentStatus.STOPPED);
+
+                deploymentRepository.save(deployment);
+
+                return toResponse(deployment);
+
+        } catch (Exception exception) {
+
+                System.out.println(
+                        "[Deployment] Failed to stop container: "
+                                + exception.getMessage()
+                );
+
+                throw new RuntimeException(
+                        "Failed to stop deployment",
+                        exception
+                );
+        }
+        }
 }
