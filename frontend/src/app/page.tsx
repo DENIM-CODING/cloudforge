@@ -27,13 +27,18 @@ export default function Home() {
   const [name, setName] = useState("");
   const [repositoryUrl, setRepositoryUrl] = useState("");
   const [error, setError] = useState("");
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
-  const [commitHashes, setCommitHashes] = useState<Record<number, string>>({});
+  const [selectedProjectId, setSelectedProjectId] =
+    useState<number | null>(null);
+  const [commitHashes, setCommitHashes] =
+    useState<Record<number, string>>({});
   const [deploymentError, setDeploymentError] = useState("");
-  const [deployingProjectId, setDeployingProjectId] = useState<number | null>(null);
+  const [deployingProjectId, setDeployingProjectId] =
+    useState<number | null>(null);
 
   const fetchProjects = async () => {
-    const response = await fetch("http://localhost:8080/api/projects");
+    const response = await fetch(
+      "http://localhost:8080/api/projects"
+    );
 
     if (!response.ok) {
       throw new Error("Failed to fetch projects");
@@ -42,7 +47,6 @@ export default function Home() {
     const data = await response.json();
     setProjects(data);
   };
-
 
   const getDeploymentStatusClass = (status: string) => {
     switch (status) {
@@ -64,7 +68,7 @@ export default function Home() {
       default:
         return "text-gray-400";
     }
-};
+  };
 
   const fetchDeployment = async (deploymentId: number) => {
     const response = await fetch(
@@ -124,20 +128,27 @@ export default function Home() {
     event.preventDefault();
     setError("");
 
-    const response = await fetch("http://localhost:8080/api/projects", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name,
-        repositoryUrl,
-      }),
-    });
+    const response = await fetch(
+      "http://localhost:8080/api/projects",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          repositoryUrl,
+        }),
+      }
+    );
 
     if (!response.ok) {
       const data = await response.json();
-      setError(data.message || "Failed to create project");
+
+      setError(
+        data.message || "Failed to create project"
+      );
+
       return;
     }
 
@@ -153,21 +164,29 @@ export default function Home() {
 
     const commitHash = commitHashes[projectId];
 
-    const response = await fetch("http://localhost:8080/api/deployments", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        projectId,
-        commitHash,
-      }),
-    });
+    const response = await fetch(
+      "http://localhost:8080/api/deployments",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          projectId,
+          commitHash,
+        }),
+      }
+    );
 
     if (!response.ok) {
       const data = await response.json();
-      setDeploymentError(data.message || "Failed to create deployment");
+
+      setDeploymentError(
+        data.message || "Failed to create deployment"
+      );
+
       setDeployingProjectId(null);
+
       return;
     }
 
@@ -185,6 +204,37 @@ export default function Home() {
     pollDeployment(deployment.id);
   };
 
+  const handleStopDeployment = async (
+    deploymentId: number
+  ) => {
+    setDeploymentError("");
+
+    const response = await fetch(
+      `http://localhost:8080/api/deployments/${deploymentId}/stop`,
+      {
+        method: "POST",
+      }
+    );
+
+    if (!response.ok) {
+      const data = await response.json();
+
+      setDeploymentError(
+        data.message || "Failed to stop deployment"
+      );
+
+      return;
+    }
+
+    const deployment = await response.json();
+
+    setDeployments((current) =>
+      current.map((item) =>
+        item.id === deployment.id ? deployment : item
+      )
+    );
+  };
+
   return (
     <main>
       <h1>CloudForge</h1>
@@ -194,17 +244,23 @@ export default function Home() {
           type="text"
           placeholder="Project name"
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={(event) =>
+            setName(event.target.value)
+          }
         />
 
         <input
           type="text"
           placeholder="Repository URL"
           value={repositoryUrl}
-          onChange={(event) => setRepositoryUrl(event.target.value)}
+          onChange={(event) =>
+            setRepositoryUrl(event.target.value)
+          }
         />
 
-        <button type="submit">Create Project</button>
+        <button type="submit">
+          Create Project
+        </button>
       </form>
 
       {error && <p>{error}</p>}
@@ -218,14 +274,22 @@ export default function Home() {
 
             <p>{project.repositoryUrl}</p>
 
-            <p>Status: {project.status}</p>
+            <p>
+              Status: {project.status}
+            </p>
 
             <p>
               Created:{" "}
-              {new Date(project.createdAt).toLocaleString()}
+              {new Date(
+                project.createdAt
+              ).toLocaleString()}
             </p>
 
-            <button onClick={() => fetchDeployments(project.id)}>
+            <button
+              onClick={() =>
+                fetchDeployments(project.id)
+              }
+            >
               View Deployments
             </button>
 
@@ -233,81 +297,133 @@ export default function Home() {
               <input
                 type="text"
                 placeholder="Commit hash"
-                value={commitHashes[project.id] || ""}
+                value={
+                  commitHashes[project.id] || ""
+                }
                 onChange={(event) =>
                   setCommitHashes((current) => ({
                     ...current,
-                    [project.id]: event.target.value,
+                    [project.id]:
+                      event.target.value,
                   }))
                 }
               />
 
               <button
-                onClick={() => handleDeploy(project.id)}
+                onClick={() =>
+                  handleDeploy(project.id)
+                }
                 disabled={
-                  deployingProjectId === project.id ||
-                  !(commitHashes[project.id] || "").trim()
+                  deployingProjectId ===
+                    project.id ||
+                  !(commitHashes[
+                    project.id
+                  ] || "").trim()
                 }
               >
-                {deployingProjectId === project.id ? "Deploying..." : "Deploy"}
+                {deployingProjectId ===
+                project.id
+                  ? "Deploying..."
+                  : "Deploy"}
               </button>
             </div>
           </div>
         ))}
       </section>
-      
+
       {selectedProjectId !== null && (
         <section>
-          <h2>Deployments {selectedProject && ` — ${selectedProject.name}`}</h2>
-          
+          <h2>
+            Deployments{" "}
+            {selectedProject &&
+              ` — ${selectedProject.name}`}
+          </h2>
+
           {deployments.length === 0 ? (
             <p>No deployments yet.</p>
           ) : (
             deployments.map((deployment) => (
               <div key={deployment.id}>
-                <p>Commit: {deployment.commitHash}</p>
+                <p>
+                  Commit:{" "}
+                  {deployment.commitHash}
+                </p>
 
                 <p>
                   Status:{" "}
-                  <span className={getDeploymentStatusClass(deployment.status)}>
+                  <span
+                    className={getDeploymentStatusClass(
+                      deployment.status
+                    )}
+                  >
                     {deployment.status}
                   </span>
                 </p>
 
                 {deployment.hostPort && (
-                  <p>Host Port: {deployment.hostPort}</p>
+                  <p>
+                    Host Port:{" "}
+                    {deployment.hostPort}
+                  </p>
                 )}
 
                 {deployment.imageName && (
-                  <p>Image: {deployment.imageName}</p>
+                  <p>
+                    Image:{" "}
+                    {deployment.imageName}
+                  </p>
                 )}
 
                 {deployment.containerName && (
-                  <p>Container: {deployment.containerName}</p>
+                  <p>
+                    Container:{" "}
+                    {deployment.containerName}
+                  </p>
                 )}
 
                 <p>
                   Created:{" "}
-                  {new Date(deployment.createdAt).toLocaleString()}
+                  {new Date(
+                    deployment.createdAt
+                  ).toLocaleString()}
                 </p>
-                {deployment.status === "SUCCESS" && deployment.hostPort && (
-                <button
-                  onClick={() =>
-                    window.open(
-                      `http://localhost:${deployment.hostPort}`,
-                      "_blank"
-                    )
-                  }
-                >
-                  Open Application
-                </button>
-              )}
+
+                {deployment.status ===
+                  "SUCCESS" &&
+                  deployment.hostPort && (
+                    <button
+                      onClick={() =>
+                        window.open(
+                          `http://localhost:${deployment.hostPort}`,
+                          "_blank"
+                        )
+                      }
+                    >
+                      Open Application
+                    </button>
+                  )}
+
+                {deployment.status ===
+                  "SUCCESS" && (
+                    <button
+                      onClick={() =>
+                        handleStopDeployment(
+                          deployment.id
+                        )
+                      }
+                    >
+                      Stop Deployment
+                    </button>
+                  )}
               </div>
             ))
           )}
         </section>
       )}
-      {deploymentError && <p>{deploymentError}</p>}
+
+      {deploymentError && (
+        <p>{deploymentError}</p>
+      )}
     </main>
   );
 }
