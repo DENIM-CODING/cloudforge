@@ -126,4 +126,16 @@ public class DeploymentService {
                 );
         }
         }
+
+    public DeploymentResponse getDeployment(Long deploymentId) {
+
+        Deployment deployment = deploymentRepository.findById(deploymentId)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Deployment with id " + deploymentId + " not found"
+                        )
+                );
+
+        return toResponse(deployment);
+    }
 }

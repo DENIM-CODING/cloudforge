@@ -52,4 +52,11 @@ public class DeploymentController {
 
         return deploymentService.stopDeployment(deploymentId);
     }
+
+    @GetMapping("/{deploymentId}")
+    public DeploymentResponse getDeployment(
+            @PathVariable Long deploymentId) {
+
+        return deploymentService.getDeployment(deploymentId);
+    }
 }
