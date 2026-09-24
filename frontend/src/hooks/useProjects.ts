@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { API_BASE_URL } from "../lib/api";
+import {
+  fetchProjects as fetchProjectsApi,
+  createProject as createProjectApi,
+} from "../services/projectService";
 
 export type Project = {
   id: number;
@@ -19,15 +22,7 @@ export const useProjects = () => {
     setError("");
 
     try {
-      const response = await fetch(
-        "http://localhost:8080/api/projects"
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch projects");
-      }
-
-      const data = await response.json();
+      const data = await fetchProjectsApi();
 
       setProjects(data);
     } catch (error) {
@@ -44,44 +39,27 @@ export const useProjects = () => {
   const createProject = async (
     name: string,
     repositoryUrl: string
-    ) => {
-        setError("");
+  ) => {
+    setError("");
 
-        try {
-            const response = await fetch(
-            `${API_BASE_URL}/projects`,
-            {
-                method: "POST",
-                headers: {
-                "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                name,
-                repositoryUrl,
-                }),
-            }
-            );
+    try {
+      const project = await createProjectApi(
+        name,
+        repositoryUrl
+      );
 
-            if (!response.ok) {
-            const data = await response.json();
+      return project;
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to create project";
 
-            throw new Error(
-                data.message || "Failed to create project"
-            );
-            }
+      setError(message);
 
-            return await response.json();
-        } catch (error) {
-            const message =
-            error instanceof Error
-                ? error.message
-                : "Failed to create project";
-
-            setError(message);
-
-            throw error;
-        }
-    };
+      throw error;
+    }
+  };
 
   return {
     projects,

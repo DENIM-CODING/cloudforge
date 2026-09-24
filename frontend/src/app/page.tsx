@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { useDeployments } from "../hooks/useDeployments";
+import { useDeployments, DeploymentStatus } from "../hooks/useDeployments";
 import { useProjects } from "../hooks/useProjects";
 
 export default function Home() {
@@ -39,7 +39,7 @@ export default function Home() {
   const [deployingProjectId, setDeployingProjectId] =
     useState<number | null>(null);
 
-  const getDeploymentStatusClass = (status: string) => {
+  const getDeploymentStatusClass = (status: DeploymentStatus) => {
     switch (status) {
       case "SUCCESS":
         return "text-green-400";
