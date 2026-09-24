@@ -56,4 +56,16 @@ public class GlobalExceptionHandler {
                 .body(response);
         }
 
+        @ExceptionHandler(InvalidDeploymentStateException.class)
+                public ResponseEntity<Map<String, Object>> handleInvalidDeploymentState(
+                        InvalidDeploymentStateException exception) {
+
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("message", exception.getMessage());
+
+                return ResponseEntity
+                        .status(HttpStatus.CONFLICT)
+                        .body(response);
+        }
+
 }

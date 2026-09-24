@@ -10,6 +10,7 @@ import com.cloudforge.backend.entity.Deployment;
 import com.cloudforge.backend.entity.DeploymentStatus;
 import com.cloudforge.backend.entity.Project;
 import com.cloudforge.backend.exception.DeploymentNotFoundException;
+import com.cloudforge.backend.exception.InvalidDeploymentStateException;
 import com.cloudforge.backend.exception.ProjectNotFoundException;
 import com.cloudforge.backend.repository.DeploymentRepository;
 import com.cloudforge.backend.repository.ProjectRepository;
@@ -95,7 +96,7 @@ public class DeploymentService {
                 );
 
         if (deployment.getStatus() != DeploymentStatus.SUCCESS) {
-                throw new RuntimeException(
+                throw new InvalidDeploymentStateException(
                         "Only successful deployments can be stopped"
                 );
         }
