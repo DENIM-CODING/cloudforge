@@ -15,6 +15,9 @@ type Deployment = {
   projectId: number;
   commitHash: string;
   status: string;
+  hostPort: number | null;
+  imageName: string | null;
+  containerName: string | null;
   createdAt: string;
 };
 
@@ -263,16 +266,42 @@ export default function Home() {
             deployments.map((deployment) => (
               <div key={deployment.id}>
                 <p>Commit: {deployment.commitHash}</p>
+
                 <p>
                   Status:{" "}
                   <span className={getDeploymentStatusClass(deployment.status)}>
                     {deployment.status}
                   </span>
                 </p>
+
+                {deployment.hostPort && (
+                  <p>Host Port: {deployment.hostPort}</p>
+                )}
+
+                {deployment.imageName && (
+                  <p>Image: {deployment.imageName}</p>
+                )}
+
+                {deployment.containerName && (
+                  <p>Container: {deployment.containerName}</p>
+                )}
+
                 <p>
                   Created:{" "}
                   {new Date(deployment.createdAt).toLocaleString()}
                 </p>
+                {deployment.status === "SUCCESS" && deployment.hostPort && (
+                <button
+                  onClick={() =>
+                    window.open(
+                      `http://localhost:${deployment.hostPort}`,
+                      "_blank"
+                    )
+                  }
+                >
+                  Open Application
+                </button>
+              )}
               </div>
             ))
           )}
