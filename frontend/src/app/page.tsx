@@ -40,6 +40,60 @@ export default function Home() {
     setProjects(data);
   };
 
+
+  const getDeploymentStatusClass = (status: string) => {
+    switch (status) {
+      case "SUCCESS":
+        return "text-green-400";
+
+      case "BUILDING":
+        return "text-yellow-400";
+
+      case "PENDING":
+        return "text-blue-400";
+
+      case "FAILED":
+        return "text-red-400";
+
+      case "STOPPED":
+        return "text-gray-400";
+
+      default:
+        return "text-gray-400";
+    }
+};
+
+  const fetchDeployment = async (deploymentId: number) => {
+    const response = await fetch(
+      `http://localhost:8080/api/deployments/${deploymentId}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch deployment");
+    }
+
+    return response.json();
+  };
+
+  const pollDeployment = async (deploymentId: number) => {
+    const deployment = await fetchDeployment(deploymentId);
+
+    setDeployments((current) =>
+      current.map((item) =>
+        item.id === deployment.id ? deployment : item
+      )
+    );
+
+    if (
+      deployment.status === "PENDING" ||
+      deployment.status === "BUILDING"
+    ) {
+      setTimeout(() => {
+        pollDeployment(deploymentId);
+      }, 2000);
+    }
+  };
+
   const fetchDeployments = async (projectId: number) => {
     setSelectedProjectId(projectId);
 
@@ -114,6 +168,8 @@ export default function Home() {
       return;
     }
 
+    const deployment = await response.json();
+
     setCommitHashes((current) => ({
       ...current,
       [projectId]: "",
@@ -122,6 +178,8 @@ export default function Home() {
     setDeployingProjectId(null);
 
     await fetchDeployments(projectId);
+
+    pollDeployment(deployment.id);
   };
 
   return (
@@ -205,7 +263,12 @@ export default function Home() {
             deployments.map((deployment) => (
               <div key={deployment.id}>
                 <p>Commit: {deployment.commitHash}</p>
-                <p>Status: {deployment.status}</p>
+                <p>
+                  Status:{" "}
+                  <span className={getDeploymentStatusClass(deployment.status)}>
+                    {deployment.status}
+                  </span>
+                </p>
                 <p>
                   Created:{" "}
                   {new Date(deployment.createdAt).toLocaleString()}
