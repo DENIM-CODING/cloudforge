@@ -9,6 +9,7 @@ import com.cloudforge.backend.dto.DeploymentResponse;
 import com.cloudforge.backend.entity.Deployment;
 import com.cloudforge.backend.entity.DeploymentStatus;
 import com.cloudforge.backend.entity.Project;
+import com.cloudforge.backend.exception.DeploymentNotFoundException;
 import com.cloudforge.backend.exception.ProjectNotFoundException;
 import com.cloudforge.backend.repository.DeploymentRepository;
 import com.cloudforge.backend.repository.ProjectRepository;
@@ -90,9 +91,7 @@ public class DeploymentService {
 
         Deployment deployment = deploymentRepository.findById(deploymentId)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "Deployment with id " + deploymentId + " not found"
-                        )
+                        new DeploymentNotFoundException(deploymentId)
                 );
 
         if (deployment.getStatus() != DeploymentStatus.SUCCESS) {
@@ -131,11 +130,11 @@ public class DeploymentService {
 
         Deployment deployment = deploymentRepository.findById(deploymentId)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "Deployment with id " + deploymentId + " not found"
-                        )
+                        new DeploymentNotFoundException(deploymentId)
                 );
 
         return toResponse(deployment);
     }
+
+
 }

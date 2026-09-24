@@ -44,4 +44,16 @@ public class GlobalExceptionHandler {
                 .body(response);
         }
 
+        @ExceptionHandler(DeploymentNotFoundException.class)
+        public ResponseEntity<Map<String, Object>> handleDeploymentNotFound(
+                DeploymentNotFoundException exception) {
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("message", exception.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(response);
+        }
+
 }
