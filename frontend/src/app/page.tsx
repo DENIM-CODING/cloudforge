@@ -1,52 +1,43 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-
-type Project = {
-  id: number;
-  name: string;
-  repositoryUrl: string;
-  createdAt: string;
-  status: string;
-};
-
-type Deployment = {
-  id: number;
-  projectId: number;
-  commitHash: string;
-  status: string;
-  hostPort: number | null;
-  imageName: string | null;
-  containerName: string | null;
-  createdAt: string;
-};
+import { useDeployments } from "../hooks/useDeployments";
+import { useProjects } from "../hooks/useProjects";
 
 export default function Home() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [deployments, setDeployments] = useState<Deployment[]>([]);
+  const {
+    projects,
+    loading: projectsLoading,
+    error: projectsError,
+    fetchProjects,
+    createProject,
+  } = useProjects();
+
+  const {
+    deployments,
+    setDeployments,
+    fetchDeployments,
+    pollDeployment,
+    createDeployment,
+    stopDeployment,
+    loading: deploymentsLoading,
+    error: deploymentsError,
+  } = useDeployments();
+
   const [name, setName] = useState("");
   const [repositoryUrl, setRepositoryUrl] = useState("");
-  const [error, setError] = useState("");
+
   const [selectedProjectId, setSelectedProjectId] =
     useState<number | null>(null);
+
   const [commitHashes, setCommitHashes] =
     useState<Record<number, string>>({});
-  const [deploymentError, setDeploymentError] = useState("");
+
+  const [deploymentError, setDeploymentError] =
+    useState("");
+
   const [deployingProjectId, setDeployingProjectId] =
     useState<number | null>(null);
-
-  const fetchProjects = async () => {
-    const response = await fetch(
-      "http://localhost:8080/api/projects"
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch projects");
-    }
-
-    const data = await response.json();
-    setProjects(data);
-  };
 
   const getDeploymentStatusClass = (status: string) => {
     switch (status) {
@@ -70,50 +61,9 @@ export default function Home() {
     }
   };
 
-  const fetchDeployment = async (deploymentId: number) => {
-    const response = await fetch(
-      `http://localhost:8080/api/deployments/${deploymentId}`
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch deployment");
-    }
-
-    return response.json();
-  };
-
-  const pollDeployment = async (deploymentId: number) => {
-    const deployment = await fetchDeployment(deploymentId);
-
-    setDeployments((current) =>
-      current.map((item) =>
-        item.id === deployment.id ? deployment : item
-      )
-    );
-
-    if (
-      deployment.status === "PENDING" ||
-      deployment.status === "BUILDING"
-    ) {
-      setTimeout(() => {
-        pollDeployment(deploymentId);
-      }, 2000);
-    }
-  };
-
-  const fetchDeployments = async (projectId: number) => {
+  const handleViewDeployments = async (projectId: number) => {
     setSelectedProjectId(projectId);
-
-    const response = await fetch(
-      `http://localhost:8080/api/deployments/project/${projectId}`
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch deployments");
-    }
-
-    const data = await response.json();
-    setDeployments(data);
+    await fetchDeployments(projectId);
   };
 
   const selectedProject = projects.find(
@@ -126,36 +76,17 @@ export default function Home() {
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    setError("");
 
-    const response = await fetch(
-      "http://localhost:8080/api/projects",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          repositoryUrl,
-        }),
-      }
-    );
+    try {
+      await createProject(name, repositoryUrl);
 
-    if (!response.ok) {
-      const data = await response.json();
+      setName("");
+      setRepositoryUrl("");
 
-      setError(
-        data.message || "Failed to create project"
-      );
-
-      return;
+      await fetchProjects();
+    } catch {
+      // Error is already stored in useProjects
     }
-
-    setName("");
-    setRepositoryUrl("");
-
-    await fetchProjects();
   };
 
   const handleDeploy = async (projectId: number) => {
@@ -164,44 +95,29 @@ export default function Home() {
 
     const commitHash = commitHashes[projectId];
 
-    const response = await fetch(
-      "http://localhost:8080/api/deployments",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          projectId,
-          commitHash,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const data = await response.json();
-
-      setDeploymentError(
-        data.message || "Failed to create deployment"
+    try {
+      const deployment = await createDeployment(
+        projectId,
+        commitHash
       );
 
+      setCommitHashes((current) => ({
+        ...current,
+        [projectId]: "",
+      }));
+
+      await fetchDeployments(projectId);
+
+      pollDeployment(deployment.id);
+    } catch (error) {
+      setDeploymentError(
+        error instanceof Error
+          ? error.message
+          : "Failed to create deployment"
+      );
+    } finally {
       setDeployingProjectId(null);
-
-      return;
     }
-
-    const deployment = await response.json();
-
-    setCommitHashes((current) => ({
-      ...current,
-      [projectId]: "",
-    }));
-
-    setDeployingProjectId(null);
-
-    await fetchDeployments(projectId);
-
-    pollDeployment(deployment.id);
   };
 
   const handleStopDeployment = async (
@@ -209,30 +125,25 @@ export default function Home() {
   ) => {
     setDeploymentError("");
 
-    const response = await fetch(
-      `http://localhost:8080/api/deployments/${deploymentId}/stop`,
-      {
-        method: "POST",
-      }
-    );
-
-    if (!response.ok) {
-      const data = await response.json();
-
-      setDeploymentError(
-        data.message || "Failed to stop deployment"
+    try {
+      const deployment = await stopDeployment(
+        deploymentId
       );
 
-      return;
+      setDeployments((current) =>
+        current.map((item) =>
+          item.id === deployment.id
+            ? deployment
+            : item
+        )
+      );
+    } catch (error) {
+      setDeploymentError(
+        error instanceof Error
+          ? error.message
+          : "Failed to stop deployment"
+      );
     }
-
-    const deployment = await response.json();
-
-    setDeployments((current) =>
-      current.map((item) =>
-        item.id === deployment.id ? deployment : item
-      )
-    );
   };
 
   return (
@@ -263,10 +174,16 @@ export default function Home() {
         </button>
       </form>
 
-      {error && <p>{error}</p>}
+      {projectsError && (
+        <p>{projectsError}</p>
+      )}
 
       <section>
         <h2>Projects</h2>
+
+        {projectsLoading && (
+          <p>Loading projects...</p>
+        )}
 
         {projects.map((project) => (
           <div key={project.id}>
@@ -287,7 +204,7 @@ export default function Home() {
 
             <button
               onClick={() =>
-                fetchDeployments(project.id)
+                handleViewDeployments(project.id)
               }
             >
               View Deployments
@@ -339,85 +256,94 @@ export default function Home() {
               ` — ${selectedProject.name}`}
           </h2>
 
-          {deployments.length === 0 ? (
-            <p>No deployments yet.</p>
-          ) : (
-            deployments.map((deployment) => (
-              <div key={deployment.id}>
-                <p>
-                  Commit:{" "}
-                  {deployment.commitHash}
-                </p>
-
-                <p>
-                  Status:{" "}
-                  <span
-                    className={getDeploymentStatusClass(
-                      deployment.status
-                    )}
-                  >
-                    {deployment.status}
-                  </span>
-                </p>
-
-                {deployment.hostPort && (
-                  <p>
-                    Host Port:{" "}
-                    {deployment.hostPort}
-                  </p>
-                )}
-
-                {deployment.imageName && (
-                  <p>
-                    Image:{" "}
-                    {deployment.imageName}
-                  </p>
-                )}
-
-                {deployment.containerName && (
-                  <p>
-                    Container:{" "}
-                    {deployment.containerName}
-                  </p>
-                )}
-
-                <p>
-                  Created:{" "}
-                  {new Date(
-                    deployment.createdAt
-                  ).toLocaleString()}
-                </p>
-
-                {deployment.status ===
-                  "SUCCESS" &&
-                  deployment.hostPort && (
-                    <button
-                      onClick={() =>
-                        window.open(
-                          `http://localhost:${deployment.hostPort}`,
-                          "_blank"
-                        )
-                      }
-                    >
-                      Open Application
-                    </button>
-                  )}
-
-                {deployment.status ===
-                  "SUCCESS" && (
-                    <button
-                      onClick={() =>
-                        handleStopDeployment(
-                          deployment.id
-                        )
-                      }
-                    >
-                      Stop Deployment
-                    </button>
-                  )}
-              </div>
-            ))
+          {deploymentsLoading && (
+            <p>Loading deployments...</p>
           )}
+
+          {deploymentsError && (
+            <p>{deploymentsError}</p>
+          )}
+
+          {!deploymentsLoading &&
+            deployments.length === 0 && (
+              <p>No deployments yet.</p>
+            )}
+
+          {deployments.map((deployment) => (
+            <div key={deployment.id}>
+              <p>
+                Commit:{" "}
+                {deployment.commitHash}
+              </p>
+
+              <p>
+                Status:{" "}
+                <span
+                  className={getDeploymentStatusClass(
+                    deployment.status
+                  )}
+                >
+                  {deployment.status}
+                </span>
+              </p>
+
+              {deployment.hostPort && (
+                <p>
+                  Host Port:{" "}
+                  {deployment.hostPort}
+                </p>
+              )}
+
+              {deployment.imageName && (
+                <p>
+                  Image:{" "}
+                  {deployment.imageName}
+                </p>
+              )}
+
+              {deployment.containerName && (
+                <p>
+                  Container:{" "}
+                  {deployment.containerName}
+                </p>
+              )}
+
+              <p>
+                Created:{" "}
+                {new Date(
+                  deployment.createdAt
+                ).toLocaleString()}
+              </p>
+
+              {deployment.status ===
+                "SUCCESS" &&
+                deployment.hostPort && (
+                  <button
+                    onClick={() =>
+                      window.open(
+                        `http://localhost:${deployment.hostPort}`,
+                        "_blank"
+                      )
+                    }
+                  >
+                    Open Application
+                  </button>
+                )}
+
+              {deployment.status ===
+                "SUCCESS" && (
+                  <button
+                    onClick={() =>
+                      handleStopDeployment(
+                        deployment.id
+                      )
+                    }
+                  >
+                    Stop Deployment
+                  </button>
+                )}
+            </div>
+          ))}
         </section>
       )}
 
