@@ -5,24 +5,9 @@ import {
   createDeployment as createDeploymentApi,
   stopDeployment as stopDeploymentApi,
 } from "../services/deploymentService";
-
-export type DeploymentStatus =
-  | "PENDING"
-  | "BUILDING"
-  | "SUCCESS"
-  | "FAILED"
-  | "STOPPED";
-
-export type Deployment = {
-  id: number;
-  projectId: number;
-  commitHash: string;
-  status: DeploymentStatus;
-  hostPort: number | null;
-  imageName: string | null;
-  containerName: string | null;
-  createdAt: string;
-};
+import {
+  Deployment,
+} from "../types/deployment";
 
 export const useDeployments = () => {
   const [deployments, setDeployments] =
